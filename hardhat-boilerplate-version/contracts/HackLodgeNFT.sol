@@ -9,12 +9,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 // GET LISTED ON OPENSEA: https://testnets.opensea.io/get-listed/step-two
 
-contract HackerLodgeNFT is ERC721URIStorage, Ownable {
+contract HackLodgeNFT is ERC721URIStorage, Ownable {
 
   using Counters for Counters.Counter;
   Counters.Counter private _tokenIds;
 
-  string public description = "Hack Lodge 2022!!!";
+  // string public description = "Hack Lodge 2022!!!";
 
   constructor() ERC721("HackLodge", "HL") {}
 
@@ -32,8 +32,8 @@ contract HackerLodgeNFT is ERC721URIStorage, Ownable {
       return id;
   }
 
-  function setDescription(string memory newDescription) public {
-      description = newDescription;
-      console.log(msg.sender, "set desccription to", description);
-  }
+//   function setDescription(string memory newDescription) public {
+//       description = newDescription;
+//       console.log(msg.sender, "set desccription to", description);
+//   }
 }
