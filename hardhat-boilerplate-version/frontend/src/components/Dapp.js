@@ -286,10 +286,15 @@ export class Dapp extends React.Component {
     this.setState({ userNFTs: [...nfts] })
   }
 
+  // TODO: specific to this example
+  async _mintNFT(to, tokenURI) {
+    this._sendTransaction(this._nft.mintItem, [to, tokenURI])
+  }
+
   // This method sends an ethereum transaction to mint HackLodgeNFT.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
-  async _mintNFT(to, tokenURI) {
+  async _sendTransaction(method, args) {
     // Sending a transaction is a complex operation:
     //   - The user can reject it
     //   - It can fail before reaching the ethereum network (i.e. if the user
@@ -312,7 +317,7 @@ export class Dapp extends React.Component {
       // We send the transaction, and save its hash in the Dapp's state. This
       // way we can indicate that we are waiting for it to be mined.
       // TODO: specific to this example
-      const tx = await this._nft.mintItem(to, tokenURI);
+      const tx = await method.apply(null, args);
       this.setState({ txBeingSent: tx.hash });
 
       // We use .wait() to wait for the transaction to be mined. This method
