@@ -252,6 +252,14 @@ export class Dapp extends React.Component {
       HackLodgeNFTArtifact.abi,
       this._provider.getSigner(0)
     );
+
+    // _mint emits a event "Transfer(from, to, tokenId)"
+    // This is how to listen to an event
+    // TODO: specific to this example
+    this._nft.on("Transfer", (from, to, tokenId) => {
+      console.log("Transfer token", from, to, tokenId.toString());
+      this._getUserNFTs();
+    })
   }
 
   // The next two methods just read from the contract and store the results
