@@ -5,10 +5,11 @@ import { ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
+// TODO: specific to this example
 import HackLodgeNFTArtifact from "../contracts/HackLodgeNFT.json";
 import contractAddress from "../contracts/contract-address.json";
 
-// All the logic of this dapp is contained in the Dapp component.
+// All the logic of this dapp is contained in this Dapp component.
 // These other components are just presentational ones: they don't have any
 // logic. They just render HTML.
 import { NoWalletDetected } from "./NoWalletDetected";
@@ -21,7 +22,7 @@ import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
 const HARDHAT_NETWORK_ID = '31337';
-const GOERLI_NETWORK_ID = '5'
+// const GOERLI_NETWORK_ID = '5'
 
 // This is an error code that indicates that the user canceled a transaction
 const ERROR_CODE_TX_REJECTED_BY_USER = 4001
@@ -34,12 +35,12 @@ export class Dapp extends React.Component {
   constructor(props) {
     super(props);
 
-    // We store multiple things in Dapp's state.
-    // You don't need to follow this pattern, but it's an useful example.
     this.initialState = {
-      // The info of the nft (i.e. It's Name and symbol)
+      // The info of the nft (i.e. It's name and symbol)
+      // TODO: specific to this example
       nftData: undefined,
-      // The user's address and balance
+      userNFTs: undefined,
+      // The user's address
       selectedAddress: undefined,
       // The ID about transactions being sent, and any possible error with them
       txBeingSent: undefined,
@@ -51,17 +52,16 @@ export class Dapp extends React.Component {
   }
 
   render() {
-    // Ethereum wallets inject the window.ethereum object. If it hasn't been
+    // MetaMask injects the window.ethereum object. If it hasn't been
     // injected, we instruct the user to install MetaMask.
     if (window.ethereum === undefined) {
       return <NoWalletDetected />;
     }
 
-    // The next thing we need to do, is to ask the user to connect their wallet.
+    // The next thing we need to do is to ask the user to connect their wallet.
     // When the wallet gets connected, we are going to save the users's address
-    // in the component's state. So, if it hasn't been saved yet, we have
+    // in the component's state. So if it hasn't been saved yet, we have
     // to show the ConnectWallet component.
-    //
     // Note that we pass it a callback that is going to be called when the user
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
@@ -85,6 +85,7 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             <h1>
+              {/* TODO: specific to this example*/}
               {this.state.nftData.name} ({this.state.nftData.symbol})
             </h1>
           </div>
@@ -123,59 +124,88 @@ export class Dapp extends React.Component {
     // This method is run when the user clicks the Connect. It connects the
     // dapp to the user's wallet, and initializes it.
 
-    // To connect to the user's wallet, we have to run this method.
-    // It returns a promise that will resolve to the user's address.
-    const [selectedAddress] = await window.ethereum.enable();
-
-    // Once we have the address, we can initialize the application.
-
-    // First we check the network
+    // We check if the user connected to the networks where we deployed
+    // our smart contract
     if (!this._checkNetwork()) {
       return;
     }
 
-    this._initialize(selectedAddress);
-
-    // We reinitialize it whenever the user changes their account.
-    window.ethereum.on("accountsChanged", ([newAddress]) => {
-      // `accountsChanged` event can be triggered with an undefined newAddress.
-      // This happens when the user removes the Dapp from the "Connected
-      // list of sites allowed access to your addresses" (Metamask > Settings > Connections)
-      // To avoid errors, we reset the dapp state 
-      if (newAddress === undefined) {
-        return this._resetState();
-      }
-      
-      this._initialize(newAddress);
-    });
-    
-    // We reset the dapp state if the network is changed
-    window.ethereum.on("networkChanged", ([networkId]) => {
+     // We reset the dapp state if the network is changed
+     window.ethereum.on("chainChanged", ([networkId]) => {
       this._resetState();
     });
+
+    // Connect to the user's account
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      this._handleAccountsChanged(accounts);
+    } catch(err) {
+      if (err.code === 4001) {
+        // EIP-1193 userRejectedRequest error
+        // If this happens, the user rejected the connection request.
+        console.log('Please connect to MetaMask.');
+        this.setState({ networkError: 'Please connect to MetaMask.' });
+      } else {
+        console.error(err);
+        this.setState({ networkError: err });
+      }
+    }
+
+    // We reinitialize it whenever the user changes their account.
+    window.ethereum.on("accountsChanged", (accounts) => {
+      this._handleAccountsChanged(accounts);
+    });
+  }
+
+  // This method checks if Metamask selected network is Localhost:8545
+  _checkNetwork() {
+    if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID) {
+    // TODO: if you deploy your contract to Goerli, use the following line
+    // if (window.ethereum.networkVersion === GOERLI_NETWORK_ID) {
+      return true;
+    }
+
+    this.setState({ 
+      networkError: 'Please connect Metamask to Localhost:8545'
+    });
+
+    return false;
+  }
+
+  _handleAccountsChanged(accounts) {
+    if (accounts.length === 0) {
+      this.setState({ networkError: 'Please connect to MetaMask.' });
+    } else {
+      this._initialize(accounts[0]);
+    }
   }
 
   _initialize(userAddress) {
     // This method initializes the dapp
 
-    // We first store the user's address in the component's state
     this.setState({
       selectedAddress: userAddress,
     });
 
-    // Then, we initialize ethers, fetch the nft's data
-    // Fetching the nft data and the user's HackLodgeNFT are specific to this
-    // sample project, but you can reuse the same initialization pattern.
     this._intializeEthers();
+  
+    // TODO: specific to this example
     this._getNFTData();
+    this._getUserNFTs();
   }
 
   async _intializeEthers() {
-    // We first initialize ethers by creating a provider using window.ethereum
+    // We first initialize ethers by creating a provider using window.ethereum.
+    // A Provider abstracts a connection to the Ethereum blockchain, 
+    // for issuing queries and sending signed state changing transactions.
+    // More about providers: https://docs.ethers.io/v4/api-providers.html
     this._provider = new ethers.providers.Web3Provider(window.ethereum);
 
-    // When, we initialize the contract using that provider and the token's
+    // A Contract is an abstraction of code that has been deployed to the blockchain.
+    // More about contract: https://docs.ethers.io/v5/api/contract/contract/.
+    // We initialize the contract using the provider and HackLodgeNFT's
     // artifact. You can do this same thing with your contracts.
+    // TODO: use your own contract artifact
     this._nft = new ethers.Contract(
       contractAddress.HackLodgeNFT,
       HackLodgeNFTArtifact.abi,
@@ -185,11 +215,25 @@ export class Dapp extends React.Component {
 
   // The next two methods just read from the contract and store the results
   // in the component state.
+  // TODO: specific to this example
   async _getNFTData() {
     const name = await this._nft.name();
     const symbol = await this._nft.symbol();
 
     this.setState({ nftData: { name, symbol } });
+  }
+
+  // TODO: specific to this example
+  async _getUserNFTs() {
+    const nfts = [];
+    const balance = await this._nft.balanceOf(this.state.selectedAddress);
+    for (let index = 0; index < balance; index++) {
+      const tokenId = await this._nft.tokenOfOwnerByIndex(this.state.selectedAddress, index);
+      const tokenURI = await this._nft.tokenURI(tokenId);
+      nfts.push({ tokenId, tokenURI });
+    }
+
+    this.setState({ userNFTs: nfts })
   }
 
   // This method sends an ethereum transaction to mint HackLodgeNFT.
@@ -217,6 +261,7 @@ export class Dapp extends React.Component {
 
       // We send the transaction, and save its hash in the Dapp's state. This
       // way we can indicate that we are waiting for it to be mined.
+      // TODO: specific to this example
       const tx = await this._nft.mintItem(to, tokenURI);
       this.setState({ txBeingSent: tx.hash });
 
@@ -275,18 +320,5 @@ export class Dapp extends React.Component {
   // This method resets the state
   _resetState() {
     this.setState(this.initialState);
-  }
-
-  // This method checks if Metamask selected network is Localhost:8545 or Goerli
-  _checkNetwork() {
-    if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID || window.ethereum.networkVersion === GOERLI_NETWORK_ID) {
-      return true;
-    }
-
-    this.setState({ 
-      networkError: 'Please connect Metamask to Localhost:8545'
-    });
-
-    return false;
   }
 }
