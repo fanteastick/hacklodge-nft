@@ -1,5 +1,7 @@
 # 🏗 Scaffold-ETH - 🎟 Simple NFT Example
 
+This is adapted from: https://github.com/scaffold-eth/scaffold-eth/tree/simple-nft-example.
+
 > Build, mint, and send around your own ERC721!
 
 # 🏃‍♀️ Quick Start
