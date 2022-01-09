@@ -17,6 +17,8 @@ import { ConnectWallet } from "./ConnectWallet";
 import { Loading } from "./Loading";
 import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
+// TODO: specific to this example
+import { MintNFT } from "./MintNFT";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
@@ -39,7 +41,7 @@ export class Dapp extends React.Component {
       // The info of the nft (i.e. It's name and symbol)
       // TODO: specific to this example
       nftData: undefined,
-      userNFTs: undefined,
+      userNFTs: [],
       // The user's address
       selectedAddress: undefined,
       // The ID about transactions being sent, and any possible error with them
@@ -85,9 +87,31 @@ export class Dapp extends React.Component {
         <div className="row">
           <div className="col-12">
             <h1>
-              {/* TODO: specific to this example*/}
               {this.state.nftData.name} ({this.state.nftData.symbol})
             </h1>
+            <p>
+              Welcome <b>{this.state.selectedAddress}</b>, you have{" "}
+              <b>
+                {this.state.userNFTs.length} {this.state.nftData.symbol}
+              </b>
+              .
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Token ID</th>
+                  <th>Token URI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {this.state.userNFTs.map((nft, index) => (
+                  <tr key={index}>
+                    <td>{nft.tokenId.toString()}</td>
+                    <td>{nft.tokenURI}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -116,6 +140,23 @@ export class Dapp extends React.Component {
             )}
           </div>
         </div>
+
+        {this.state.nftData.owner.toLowerCase() === this.state.selectedAddress && (
+          <div className="row">
+            <div className="col-12">
+              {/*
+                This component displays a form that the user can use to send a 
+                transaction and mint some NTFs.
+                The component doesn't have logic, it just calls the _mintNFT callback.
+              */}
+              <MintNFT
+                mintNFT={(to, tokenURI) =>
+                  this._mintNFT(to, tokenURI)
+                }
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -219,8 +260,9 @@ export class Dapp extends React.Component {
   async _getNFTData() {
     const name = await this._nft.name();
     const symbol = await this._nft.symbol();
+    const owner = await this._nft.owner();
 
-    this.setState({ nftData: { name, symbol } });
+    this.setState({ nftData: { name, symbol, owner } });
   }
 
   // TODO: specific to this example
@@ -233,13 +275,13 @@ export class Dapp extends React.Component {
       nfts.push({ tokenId, tokenURI });
     }
 
-    this.setState({ userNFTs: nfts })
+    this.setState({ userNFTs: [...nfts] })
   }
 
   // This method sends an ethereum transaction to mint HackLodgeNFT.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
-  async _mintHackLodgeNFT(to, tokenURI) {
+  async _mintNFT(to, tokenURI) {
     // Sending a transaction is a complex operation:
     //   - The user can reject it
     //   - It can fail before reaching the ethereum network (i.e. if the user
