@@ -22,14 +22,14 @@ contract HackLodgeNFT is ERC721, ERC721URIStorage, ERC721Enumerable, Ownable {
 
   function mintItem(address to, string memory tokenUri)
       public
-      onlyOwner
+      onlyOwner // inherits from Ownable ; only the owner can run this function 
       returns (uint256)
   {
-      _tokenIds.increment();
+      _tokenIds.increment(); // this mint keeps a record of the token's address
 
       uint256 id = _tokenIds.current();
       _mint(to, id);
-      _setTokenURI(id, tokenUri);
+      _setTokenURI(id, tokenUri); // tokenURI usually has image, comes from ERC721URIStorage
 
       return id;
   }

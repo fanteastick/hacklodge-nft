@@ -13,7 +13,7 @@ const { expect } = require("chai");
 // `describe` recieves the name of a section of your test suite, and a callback.
 // The callback must define the tests of that section. This callback can't be
 // an async function.
-describe("FlemVotes contract", function () {
+describe("Voting contract", function () {
   // Mocha has four functions that let you hook into the the test runner's
   // lifecyle. These are: `before`, `beforeEach`, `after`, `afterEach`.
 
@@ -23,7 +23,7 @@ describe("FlemVotes contract", function () {
   // A common pattern is to declare some variables, and assign them in the
   // `before` and `beforeEach` callbacks.
 
-  let FlemVotes;
+  let Voting;
   let nft;
   let owner;
   let addr1;
@@ -34,36 +34,26 @@ describe("FlemVotes contract", function () {
   // time. It receives a callback, which can be async.
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
-    FlemVotes = await ethers.getContractFactory("FlemVotes");
+    Voting = await ethers.getContractFactory("Voting");
     [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
 
     // To deploy our contract, we just have to call HackLodgeNFT.deploy() and await
     // for it to be deployed(), which happens onces its transaction has been
     // mined.
-    nft = await FlemVotes.deploy();
+    nft = await Voting.deploy();
 
     // We can interact with the contract by calling `nft.method()`
     await nft.deployed();
   });
 
-  // You can nest describe calls to create subsections.
-  describe("Deployment", function () {
-    // `it` is another Mocha function. This is the one you use to define your
-    // tests. It receives the test name, and a callback function.
-
-    // If the callback function is async, Mocha will `await` it.
-    it("Should set the right owner", async function () {
-      // Expect receives a value, and wraps it in an assertion objet. These
-      // objects have a lot of utility methods to assert values.
-
-      // This test expects the owner variable stored in the contract to be equal
-      // to our Signer's owner.
-      expect(await nft.owner()).to.equal(owner.address);
-    });
-
-    it("Should set the correct name and symbol", async function () {
-      expect(await nft.name()).to.equal("FlemVotes");
-      expect(await nft.symbol()).to.equal("FV");
+  describe("pullPrevPrompt", function () {
+    it("Should make two prompts and return the second one", async function () {
+      const prompt1 = "prompt 1";
+      const prompt2 = "prompt 2";
+      await nft.createTopic(prompt1, ["yes", "no"], 5, 10);
+      await nft.createTopic(prompt2, ["yes", "no"], 5, 10);
+      console.log("prompt time");
+      expect((await nft.getRecentTopicPrompt()) === prompt2);
     });
   });
 

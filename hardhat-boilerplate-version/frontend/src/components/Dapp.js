@@ -6,8 +6,10 @@ import { ethers } from "ethers";
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
 // TODO: specific to this example
-import HackLodgeNFTArtifact from "../contracts/HackLodgeNFT.json";
-import contractAddress from "../contracts/contract-address.json";
+import FlemVotesArtifact from "../contracts/FlemVotes.json";
+import contractAddressFlemVotes from "../contracts/contract-address-flemvotes.json";
+import contractAddressVoting from "../contracts/contract-address-voting.json";
+import VotingLogicArtifact from "../contracts/Voting.json";
 
 // All the logic of this dapp is contained in this Dapp component.
 // These other components are just presentational ones: they don't have any
@@ -19,20 +21,24 @@ import { TransactionErrorMessage } from "./TransactionErrorMessage";
 import { WaitingForTransactionMessage } from "./WaitingForTransactionMessage";
 // TODO: specific to this example
 import { MintNFT } from "./MintNFT";
+import { AwardReputationForm } from "./AwardReputationForm";
+import { BurnTokenForm } from "./BurnTokenForm";
+import { MakeTopicForm } from "./MakeTopicForm";
+import { LoadTopicForm } from "./LoadTopicForm";
 
 // This is the Hardhat Network id, you might change it in the hardhat.config.js
 // Here's a list of network ids https://docs.metamask.io/guide/ethereum-provider.html#properties
 // to use when deploying to other networks.
-const HARDHAT_NETWORK_ID = '31337';
+const HARDHAT_NETWORK_ID = "31337";
 // const GOERLI_NETWORK_ID = '5'
 
 // This is an error code that indicates that the user canceled a transaction
-const ERROR_CODE_TX_REJECTED_BY_USER = 4001
+const ERROR_CODE_TX_REJECTED_BY_USER = 4001;
 
 // This component is in charge of doing these things:
 //   1. Connects to the user's wallet
-//   2. Read from the contract - shows the HackLodgeNFT's name and symbol, and the HackLodgeNFT the user owns
-//   3. Write to the contract - mint HackLodgeNFT by sending transactions 
+//   2. Read from the contract - shows the FlemVotes's name and symbol, and the FlemVotes the user owns
+//   3. Write to the contract - mint FlemVotes by sending transactions
 export class Dapp extends React.Component {
   constructor(props) {
     super(props);
@@ -68,8 +74,8 @@ export class Dapp extends React.Component {
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
       return (
-        <ConnectWallet 
-          connectWallet={() => this._connectWallet()} 
+        <ConnectWallet
+          connectWallet={() => this._connectWallet()}
           networkError={this.state.networkError}
           dismiss={() => this._dismissNetworkError()}
         />
@@ -96,22 +102,21 @@ export class Dapp extends React.Component {
               </b>
               .
             </p>
-            <table>
+            {/* ez: commented out stuff with specific token IDs */}
+            {/* <table>
               <thead>
                 <tr>
                   <th>Token ID</th>
-                  <th>Token URI</th>
                 </tr>
               </thead>
               <tbody>
                 {this.state.userNFTs.map((nft, index) => (
                   <tr key={index}>
                     <td>{nft.tokenId.toString()}</td>
-                    <td>{nft.tokenURI}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table> */}
           </div>
         </div>
 
@@ -141,7 +146,8 @@ export class Dapp extends React.Component {
           </div>
         </div>
 
-        {this.state.nftData.owner.toLowerCase() === this.state.selectedAddress && (
+        {this.state.nftData.owner.toLowerCase() ===
+          this.state.selectedAddress && (
           <div className="row">
             <div className="col-12">
               {/*
@@ -149,11 +155,11 @@ export class Dapp extends React.Component {
                 transaction and mint some NTFs.
                 The component doesn't have logic, it just calls the _mintNFT callback.
               */}
-              <MintNFT
-                mintNFT={(to, tokenURI) =>
-                  this._mintNFT(to, tokenURI)
-                }
-              />
+              {/* <MintNFT mintNFT={(to) => this._mintNFT(to)} /> */}
+              <AwardReputationForm awardRep={(to) => this._awardRep(to)} />
+              <BurnTokenForm burnTokens={(time) => this._burnTokens(time)} />
+              <MakeTopicForm makeTopic={(prompt) => this._makeTopic(prompt)} />
+              <LoadTopicForm pullPrompt={() => this._pullRecentPrompt()} />
             </div>
           </div>
         )}
@@ -171,21 +177,23 @@ export class Dapp extends React.Component {
       return;
     }
 
-     // We reset the dapp state if the network is changed
-     window.ethereum.on("chainChanged", ([networkId]) => {
+    // We reset the dapp state if the network is changed
+    window.ethereum.on("chainChanged", ([networkId]) => {
       this._resetState();
     });
 
     // Connect to the user's account
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
       this._handleAccountsChanged(accounts);
-    } catch(err) {
+    } catch (err) {
       if (err.code === 4001) {
         // EIP-1193 userRejectedRequest error
         // If this happens, the user rejected the connection request.
-        console.log('Please connect to MetaMask.');
-        this.setState({ networkError: 'Please connect to MetaMask.' });
+        console.log("Please connect to MetaMask.");
+        this.setState({ networkError: "Please connect to MetaMask." });
       } else {
         console.error(err);
         this.setState({ networkError: err });
@@ -201,13 +209,13 @@ export class Dapp extends React.Component {
   // This method checks if Metamask selected network is Localhost:8545
   _checkNetwork() {
     if (window.ethereum.networkVersion === HARDHAT_NETWORK_ID) {
-    // TODO: if you deploy your contract to Goerli, use the following line
-    // if (window.ethereum.networkVersion === GOERLI_NETWORK_ID) {
+      // TODO: if you deploy your contract to Goerli, use the following line
+      // if (window.ethereum.networkVersion === GOERLI_NETWORK_ID) {
       return true;
     }
 
-    this.setState({ 
-      networkError: 'Please connect Metamask to Localhost:8545'
+    this.setState({
+      networkError: "Please connect Metamask to Localhost:8545",
     });
 
     return false;
@@ -215,7 +223,7 @@ export class Dapp extends React.Component {
 
   _handleAccountsChanged(accounts) {
     if (accounts.length === 0) {
-      this.setState({ networkError: 'Please connect to MetaMask.' });
+      this.setState({ networkError: "Please connect to MetaMask." });
     } else {
       this._initialize(accounts[0]);
     }
@@ -229,7 +237,7 @@ export class Dapp extends React.Component {
     });
 
     this._intializeEthers();
-  
+
     // TODO: specific to this example
     this._getNFTData();
     this._getUserNFTs();
@@ -237,19 +245,24 @@ export class Dapp extends React.Component {
 
   async _intializeEthers() {
     // We first initialize ethers by creating a provider using window.ethereum.
-    // A Provider abstracts a connection to the Ethereum blockchain, 
+    // A Provider abstracts a connection to the Ethereum blockchain,
     // for issuing queries and sending signed state changing transactions.
     // More about providers: https://docs.ethers.io/v4/api-providers.html
     this._provider = new ethers.providers.Web3Provider(window.ethereum);
 
     // A Contract is an abstraction of code that has been deployed to the blockchain.
     // More about contract: https://docs.ethers.io/v5/api/contract/contract/.
-    // We initialize the contract using the provider and HackLodgeNFT's
+    // We initialize the contract using the provider and FlemVotes's
     // artifact. You can do this same thing with your contracts.
     // TODO: use your own contract artifact
     this._nft = new ethers.Contract(
-      contractAddress.HackLodgeNFT,
-      HackLodgeNFTArtifact.abi,
+      contractAddressFlemVotes.FlemVotes,
+      FlemVotesArtifact.abi,
+      this._provider.getSigner(0)
+    );
+    this._votingLogic = new ethers.Contract(
+      contractAddressVoting.Voting,
+      VotingLogicArtifact.abi,
       this._provider.getSigner(0)
     );
 
@@ -259,7 +272,7 @@ export class Dapp extends React.Component {
     this._nft.on("Transfer", (from, to, tokenId) => {
       console.log("Transfer token", from, to, tokenId.toString());
       this._getUserNFTs();
-    })
+    });
   }
 
   // The next two methods just read from the contract and store the results
@@ -278,20 +291,56 @@ export class Dapp extends React.Component {
     const nfts = [];
     const balance = await this._nft.balanceOf(this.state.selectedAddress);
     for (let index = 0; index < balance; index++) {
-      const tokenId = await this._nft.tokenOfOwnerByIndex(this.state.selectedAddress, index);
-      const tokenURI = await this._nft.tokenURI(tokenId);
-      nfts.push({ tokenId, tokenURI });
+      const tokenId = await this._nft.tokenOfOwnerByIndex(
+        this.state.selectedAddress,
+        index
+      );
+      nfts.push({ tokenId });
     }
 
-    this.setState({ userNFTs: [...nfts] })
+    this.setState({ userNFTs: [...nfts] });
   }
 
   // TODO: specific to this example
-  async _mintNFT(to, tokenURI) {
-    this._sendTransaction(this._nft.mintItem, [to, tokenURI])
+  async _mintNFT(to) {
+    this._sendTransaction(this._nft.safeMint, [to]);
   }
 
-  // This method sends an ethereum transaction to mint HackLodgeNFT.
+  async _awardRep(to) {
+    this._sendTransaction(this._nft.awardReputation, [to]);
+  }
+
+  async _burnTokens(time) {
+    this._sendTransaction(this._nft._expireTokens, [20]);
+    console.log("sent transaction _burnTokens");
+  }
+
+  async _makeTopic(prompt) {
+    this._sendTransaction(this._votingLogic.createTopic, [
+      prompt,
+      ["yes", "no"],
+      5,
+      10,
+    ]);
+    console.log("transaction sent: createTopic to Voting");
+  }
+
+  async _pullRecentPrompt() {
+    let sendPromise = this._sendTransaction(
+      this._votingLogic.getRecentTopicPrompt,
+      []
+    );
+    console.log("pulled the most recent prompt from contract");
+    sendPromise.then((this._votingLogic.getRecentTopicPrompt, []) => {
+      console.log(this._votingLogic.getRecentTopicPrompt());
+      // {
+      //    // All transaction fields will be present
+      //    "nonce", "gasLimit", "pasPrice", "to", "value", "data",
+      //    "from", "hash", "r", "s", "v"
+      // }
+    });
+  }
+  // This method sends an ethereum transaction to mint FlemVotes.
   // While this action is specific to this application, it illustrates how to
   // send a transaction.
   async _sendTransaction(method, args) {

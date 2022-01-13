@@ -3,16 +3,12 @@ require("@nomiclabs/hardhat-waffle");
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-
-// To deploy to goerli testnet, uncomment the code below.
-// You also need to set the enviornment variable GOERLI_PRIVATE_KEY,
-// you can run `export GOERLI_PRIVATE_KEY=<private-key>` in your command line.
 module.exports = {
   solidity: "0.8.0",
-  // networks:{
-  //   goerli: {
-  //     url: "https://goerli.infura.io/v3/5667a1f708754d8687b99382f8b3a92a",
-  //     accounts: [process.env.GOERLI_PRIVATE_KEY],
-  //   },
-  // },
+  networks:{
+    ropsten: {
+      url: "https://ropsten.infura.io/v3/32f8ddb78a434579a05e2a99dcbf0770", // ez: should create ur own for ur own project
+      accounts: ['8df54a447dc444abbd82506bc6b8fb082f56629896efe0bb0c651a614b853423'], // LOL DON"T POST THIS
+    },
+  },
 };
